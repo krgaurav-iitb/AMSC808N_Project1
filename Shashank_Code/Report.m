@@ -47,8 +47,8 @@ App = y';
 C = [eye(n,n); -eye(n,n); App];  %matrix of contraints
 %b = [zeros(2*n + 1,1); c*ones(n,1)]; % vector of constraints
 b = [zeros(n,1); -c*ones(n,1); 0];
-gfun = @(x) D*x - d; %gradient 
-Hfun = @(x) D; %hessian 
+grad = @(x) D*x - d; %gradient 
+hess = @(x) D; %hessian 
 %init = [zeros(n,1); c*ones(n,1)]; % initial guess
 init = zeros(n,1);
 %W = [1:n (2*n + 1):(3*n + 1)]; %set of working constraints at the initial point
@@ -57,7 +57,7 @@ W = W';
 % The constraints matrix is a 2n+1 by n matrix 
 % All constraints are active. 
 % Time to run the solver! 
-[lambs, lm] = ASM(init, gfun, Hfun, C, b, W);
+[lambs, lm] = ASM(init, grad, hess, C, b, W);
 soln = lambs(:,end); % extracting the lambda vector  
 wASM = (XX')*(y .* soln); % optimal w 
 %Computing B via soft margin support vectors
@@ -108,9 +108,33 @@ q.EdgeColor = 'none';
 camlight 
 lighting gouraud
 alpha(0.3);
-
-
-
-
-
+%
+%% Stochastic Gradient Descent: Convergence and Runtime statistics
+%
+% Recall that in a decreasing stepsize routine, we pick a stepsize sequence
+% to be an element of $l^2(\mathbb{R})\setminus l^1(\mathbb{R})$;
+% furthermore, if we intend for our stepsize to decay exponentially, then
+% we must set a schedule that takes each stepsize $\alpha_k$ $m_k$ times,
+% where $m_k = \mathcal{O}(k^{-1}2^{-k})$ so that the convergence property
+% may be retained.
+%
+gradient = @(s,t)gfun(s,Y,t);
+init = [-1;-1;1;1];
+step = 0.3;
+rank = length(Y(:,1));
+batchsize = 20;
+m0 = 10;
+schedule = 15;
+runs = SGD(init,gradient,step,rank,batchsize,m0,schedule);
+trials = zeros([size(runs) 10]);
+for i = 1:10
+    trials(:,:,i) = SGD(init,gradient,step,rank,batchsize,m0,schedule);
+end
+avgs = trials(:,:,1);
+for i = 2:10
+    avgs(:,i) = avgs + trials(:,i);
+end
+avgs = 0.1*avgs;
+% 
+% 
 

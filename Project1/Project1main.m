@@ -145,21 +145,21 @@ ylabel('|| stoch grad f||','Fontsize',fsz);
 
 end
 %%
-function f = fun0(I,Y,w,lam) %Loss function with tikhonov regularization
-f = sum(log(1 + exp(-Y(I,:)*w)))/length(I) + 0.5*lam*w'*w; 
-end
-%%
-function g = gfun0(I,Y,w,lam) 
-aux = exp(-Y(I,:)*w);
-d1 = size(Y,2);
-g = sum(-Y(I,:).*((aux./(1 + aux))*ones(1,d1)),1)'/length(I) + lam*w;
-end
-%%
-function Hv = Hvec0(I,Y,w,v,lam)
-aux = exp(-Y(I,:)*w);
-d1 = size(Y,2);
-Hv = sum(Y(I,:).*((aux.*(Y(I,:)*v)./((1+aux).^2)).*ones(1,d1)),1)' + lam*v;
-end
+% function f = fun0(I,Y,w,lam) %Loss function with tikhonov regularization
+% f = sum(log(1 + exp(-Y(I,:)*w)))/length(I) + 0.5*lam*w'*w; 
+% end
+% %%
+% function g = gfun0(I,Y,w,lam) % Gradient of Loss function 
+% aux = exp(-Y(I,:)*w);
+% d1 = size(Y,2);
+% g = sum(-Y(I,:).*((aux./(1 + aux))*ones(1,d1)),1)'/length(I) + lam*w;
+% end
+% %%
+% function Hv = Hvec0(I,Y,w,v,lam) % Hessian of Loss function
+% aux = exp(-Y(I,:)*w);
+% d1 = size(Y,2);
+% Hv = sum(Y(I,:).*((aux.*(Y(I,:)*v)./((1+aux).^2)).*ones(1,d1)),1)' + lam*v;
+% end
 
 
 
