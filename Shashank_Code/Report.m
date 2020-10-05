@@ -13,7 +13,8 @@
 % 
 % <latex>
 % \begin{align}
-% \text{min}&\frac{1}{2}D'\lambda - [1_{1\times n} 0_{1\times n}]\lambda \, \text{w.r.t}\\
+% \text{min}&\frac{1}{2}D'\lambda - [1_{1\times n} 0_{1\times n}]\lambda\,
+% \text{w.r.t}\\
 % & C \geq \lambda_i \geq 0 \, 1 \leq i \leq 2n \\
 % & \sum_{i=1}^{n}\lambda_iy_i = 0 \\
 % & \lambda_i + \lambda _{i+n} = C \, 1 \leq i \leq n
@@ -31,7 +32,7 @@
 % We also set the penalty constant $C$ to be $0.1$. 
 %%
 % Setting up arguments for ASM.m
-c = 0.1; %Constant in the penalty function 
+c = 0.2; %Constant in the penalty function 
 y = label; % the label vector 
 n = length(y); % number of data points
 %D = [(y*y').*((XX * XX')) zeros(n,n); zeros(n,n) zeros(n,n)]; %SPD matrix 
@@ -99,7 +100,7 @@ nn = 50;
 plane = wASM(1)*xx+wASM(2)*yy+wASM(3)*zz+wASM(4);
 plane2 = w(1)*xx+w(2)*yy+w(3)*zz+w(4);
 p = patch(isosurface(xx,yy,zz,plane,0));
-q = patch(isosurface(xx,yy,zz,plane2,0))
+q = patch(isosurface(xx,yy,zz,plane2,0));
 p.FaceColor = 'green';
 p.EdgeColor = 'none';
 q.FaceColor = 'red';
