@@ -1,4 +1,4 @@
-function iters = SGD(init,grad,step,rank,batchsize,m0,schedule)
+function [iters,gradz] = SGD(init,grad,step,rank,batchsize,m0,schedule)
     % init--initial guess
     % grad--function that evaluates gradient of f at current iterate
     % step--initial step size set to 0.3
@@ -11,8 +11,11 @@ function iters = SGD(init,grad,step,rank,batchsize,m0,schedule)
     n = rank;
     N = m0;
     NN = schedule;
-    iters = init; 
-    x = init;
+    x = init; 
+    iters = x;
+    k = randi(n,batchsize,1);
+    g = grad(k,x);
+    gradz = g;
     for ii = 1 : NN
      s = step/2^ii;
      nsteps = ceil(N*2^ii/ii);
@@ -21,6 +24,7 @@ function iters = SGD(init,grad,step,rank,batchsize,m0,schedule)
             g = grad(k,x);
             x = x - g*s;
             iters = [iters, x];
+            gradz = [gradz, g];
         end
     end
 end

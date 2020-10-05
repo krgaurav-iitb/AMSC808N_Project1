@@ -118,6 +118,7 @@ alpha(0.3);
 % where $m_k = \mathcal{O}(k^{-1}2^{-k})$ so that the convergence property
 % may be retained.
 %
+%% 
 gradient = @(s,t)gfun(s,Y,t);
 init = [-1;-1;1;1];
 step = 0.3;
@@ -125,16 +126,40 @@ rank = length(Y(:,1));
 batchsize = 20;
 m0 = 10;
 schedule = 15;
-runs = SGD(init,gradient,step,rank,batchsize,m0,schedule);
-trials = zeros([size(runs) 10]);
-for i = 1:10
-    trials(:,:,i) = SGD(init,gradient,step,rank,batchsize,m0,schedule);
-end
-avgs = trials(:,:,1);
+[avgs, gradz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
 for i = 2:10
-    avgs(:,i) = avgs + trials(:,i);
+    [trials,gz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
+    avgs = avgs + trials;
+    gradz = gradz + gz;
 end
 avgs = 0.1*avgs;
+gradz = 0.1*gradz;
 % 
+%% Stochastic L-BFGS: Implementation and Performance vs SIN and SG
+%
+% In L-BFGS, we maintain a store of $m$ pairs $(s_i, y_i)$ that enable us
+% to calculate $H_{k}g_k$ where $H_k$ is some approximation to
+% $\nabla^{2}f(x_k)$ and $g_k$ is some approximation to $\nabla f(x_k)$.
+% Once we produce $x_{k+1} = x_k - \alpha_k H_{k}g_k$, then we can
+% calculate the new $s_{k} = x_{k+1} - x_{k}$ and $y_k = \nabla
+% f(x_{k+1})-\nabla f(x_{k}). In Stochastic L-BFGS, we periodically change
+% the way for computing $y_k$ as follows: instead of letting $y_k = \nabla
+% f(x_{k+1})-\nabla f(x_{k})$, we set $y_k = B_{k}s_k$ where $B_k$ is a
+% (stochastic) approximation to the actual Hessian $\nabla^{2}f(x_k)$. This
+% approach leads to the following implementation technicalities: 
 % 
+% # Frequency of the stochastic step: The less frequently we change the way
+% to compute $(s_i, y_i)$, the more the method looks like L-BFGS. 
+% # The approximation $B_k$: We assume that the Hessian has some rank $n$
+% and we pick an approximation in a subspace spanned by a randomly chosen
+% subset of the original basis indexed by $\xi^{H}_{k}$. The size of the $N_H$ 
+% is the rank of the approximating subspace; smaller the $N_H$, the
+% larger the variance in our approximate Hessian $B_k$. But we also do not
+% want to make $N_H$ too close to $n$ as we would then lose the point of actually
+% approximating the Hessian. 
+% 
+%% 
+% initializing with a linesearch routine à
 
+
+a
