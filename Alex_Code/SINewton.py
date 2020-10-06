@@ -1,7 +1,8 @@
 import numpy as np
 from CG import CG
+import time
 
-def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64):
+def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64,kmax = 1e3):
     rho = 0.1
     gam = 0.9
     jmax = round(np.ceil(np.log(1e-14)/np.log(gam)))
@@ -9,14 +10,16 @@ def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64):
     CGimax = 20
     n = Y.shape[0]
     bsz = np.minimum(n,batchsize)
-    kmax = round(5e3)
     I = np.arange(n)
-    f = np.zeros(kmax+1)
+    f = np.zeros(int(kmax+1))
     f[0] = fun(I,Y,w)
-    normgrad = np.zeros(kmax)
+    normgrad = np.zeros(int(kmax))
+    runtime = np.zeros(int(kmax))
+    tic = time.perf_counter()
     nfail = 0
-    nfailmax = 5*np.ceil(n/bsz)
-    for k in range(kmax):
+    # nfailmax = 5*np.ceil(n/bsz)
+    nfailmax = kmax+1
+    for k in range(int(kmax)):
         Ig = np.random.permutation(I)[:bsz]
         IH = np.random.permutation(I)[:bsz]
         Mvec = lambda v: Hvec(IH,Y,w,v)
@@ -41,6 +44,8 @@ def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64):
         else:
             nfail += 1
         f[k+1] = fun(I,Y,w)
+        toc = time.perf_counter()
+        runtime[k] = toc - tic
         """
         print('k = %d, a = %e, f = %e' % (k,a,f[k+1]))
         """
@@ -48,5 +53,5 @@ def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64):
             f = f[:k+2]
             normgrad = normgrad[:k+1]
             break
-    print('k = %d, a = %e, f = %e' % (k,a,f[k+1]))
-    return w,f,normgrad
+    # print('k = %d, a = %e, f = %e' % (k,a,f[k+1]))
+    return w,f,normgrad,runtime
