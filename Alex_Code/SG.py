@@ -2,32 +2,43 @@ import numpy as np
 import time
 
 def SG(fun, gfun, Y, x, afun, batchsize = 64, itermax = 10000):
+    # Minimize function using stochastic gradient descent
+    # Inputs:
+    #  fun - loss function
+    #  gfun - gradient of loss function
+    #  Y - data matrix
+    #  x - initial weights
+    #  afun - step size scheduling function
+    #  batchsize - number of data points to evaluate function, gradient at
+    #  itermax - maximum number of iterations
+    
+    # Initialize arrays
     xiter = np.zeros((itermax+1,x.size))
     f = np.zeros(itermax+1)
     runtime = np.zeros(itermax)
-    n = Y.shape[0]
+    n = Y.shape[0] # Number of data points
     Iall = np.arange(n)
     tic = time.perf_counter()
     f[0] = fun(Iall,Y,x)
     xiter[0] = x
     grad_norm = np.zeros(itermax+1)
-    bsz = np.minimum(n,batchsize)
-    I = np.random.permutation(n)[:bsz]
+    bsz = np.minimum(n,batchsize) # If not enought data points for batchsize, set to maximum
+    I = np.random.permutation(n)[:bsz] # Get random sample of data points
     g = gfun(I,Y,x)
     grad_norm[0] = np.linalg.norm(g)
     toc = time.perf_counter()
-    runtime[0] = toc - tic
+    runtime[0] = toc - tic # Time computation
     itr = 0
     while itr < itermax - 1:
-        xiter[itr+1] = xiter[itr] - afun(itr)*g
+        xiter[itr+1] = xiter[itr] - afun(itr)*g # Update weights
         f[itr+1] = fun(Iall,Y,xiter[itr+1])
         itr += 1
-        I = np.random.permutation(n)[:bsz]
-        g = gfun(I,Y,xiter[itr])
+        I = np.random.permutation(n)[:bsz] # Get a new sample
+        g = gfun(I,Y,xiter[itr]) # Compute gradient
         grad_norm[itr] = np.linalg.norm(g)
         toc = time.perf_counter()
-        runtime[itr] = toc - tic
-    xiter[itr+1] = xiter[itr] - afun(itr)*g
+        runtime[itr] = toc - tic # Time computation
+    xiter[itr+1] = xiter[itr] - afun(itr)*g # Do final update
     f[itr+1] = fun(Iall,Y,xiter[itr+1])
-    return xiter, f, grad_norm, runtime
+    return xiter, f, grad_norm, runtime # Return final weights, results vectors, and runtime
     

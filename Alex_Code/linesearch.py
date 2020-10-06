@@ -1,6 +1,15 @@
 import numpy as np
 
 def linesearch(x,p,g,fun,eta,gam,jmax):
+    # Apply the backtracking linesearch algorithm
+    # Inputs:
+    #  x - starting point
+    #  p - descent direction
+    #  g - gradient at point
+    #  fun - function being evaluated
+    #  eta - stopping bounds
+    #  gamma - slope coefficient
+    #  jmax - max number of iterations
     a = 1
     f0 = fun(x)
     aux = eta*np.dot(g,p)

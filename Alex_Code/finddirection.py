@@ -1,6 +1,7 @@
 import numpy as np
 
 def finddirection(g,s,y,rho):
+    # Find the descent direction given an approximate Hessian
     # input: g = gradient dim-by-1
     # s = matrix dim-by-m, s[:,i] = x_{k-i+1} - x_{k-i}
     # y = marix dim-by-m, y[:,i] = g_{k-i+1}-g_{k-i}
