@@ -119,21 +119,21 @@ alpha(0.3);
 % may be retained.
 %
 %% 
-gradient = @(s,t)gfun(s,Y,t);
-init = [-1;-1;1;1];
+gradient = @(s,t)gfun0(s,Y,t,lam);
+init = wASM;
 step = 0.3;
 rank = length(Y(:,1));
-batchsize = 20;
+batchsize = 52;
 m0 = 10;
 schedule = 15;
 [avgs, gradz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
-for i = 2:10
-    [trials,gz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
-    avgs = avgs + trials;
-    gradz = gradz + gz;
-end
-avgs = 0.1*avgs;
-gradz = 0.1*gradz;
+% for i = 2:10
+%     [trials,gz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
+%     avgs = avgs + trials;
+%     gradz = gradz + gz;
+% end
+% avgs = 0.1*avgs;
+% gradz = 0.1*gradz;
 % 
 %% Stochastic L-BFGS: Implementation and Performance vs SIN and SG
 %
@@ -159,7 +159,19 @@ gradz = 0.1*gradz;
 % approximating the Hessian. 
 % 
 %% 
-% initializing with a linesearch routine à
+% Initializing with a linesearch routine like LBFGS
 
+% n= 
+func = @(x)fun(1:n,Y,x);
+gam = 0.9; % line search step factor
+jmax = ceil(log(1e-14)/log(gam)); % max # of iterations in line search
+eta = 0.5; % backtracking stopping criterion factor
+x = [-1; 1; -1; 1] %initial guess
+g = gradient(1:n, x);
+a = ls(x,-g,g,func,eta,gam,jmax);
+xnew = x - a*g;
+gnew = gfun(xnew);
+s(:,1) = xnew - x;
+y(:,1) = gnew - g;
+x = xnew;
 
-a

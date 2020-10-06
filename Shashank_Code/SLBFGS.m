@@ -1,4 +1,4 @@
-function SLBFGS(init, s, y, rho, m, Ng, Nh, M, func, grad, hess, grank, hrank)
+function [point, slope] = SLBFGS(init, s, y, rho, m, Ng, Nh, M, func, grad, hess, grank, hrank)
 %   init--initial guess
 %   m--limited memory constant (default is 5)
 %   Ng--batch size for gradient
@@ -18,6 +18,8 @@ tol = 1e-10;
 nor = norm(g);
 iter = 1;
 x = init;
+point = x; 
+slope = g; 
 while nor > tol
     % We compute the direction via the LBFGS routine 
     if iter < m 
@@ -26,24 +28,24 @@ while nor > tol
     else
         p = finddirection(g,s,y,rho);
     end
-    % We compute the step size via linesearch (may be modified)
-    [a,j] = linesearch(x,p,g,func,eta,gam,jmax);
+    % We compute the step size via ls (may be modified)
+    [a,j] = ls(x,p,g,func,eta,gam,jmax);
     if j == jmax
         p = -g;
-        [a,j] = linesearch(x,p,g,func,eta,gam,jmax);
+        [a,j] = ls(x,p,g,func,eta,gam,jmax);
     end
     % 
     step = a*p;
     xnew = x + step; %xnew is x_k+1; x is x_k 
-    ynew = xnew - x; %ynew is yk 
+    snew = step; %snew is sk_k+1 
     %Stochastic step for Hessian 
     if mod(iter,M) == 0
         xi_h = randi(hrank, Nh, 1);
         Htemp = hess(xi_h, x); %generate random hessian
-        snew = Htemp*xnew; 
+        ynew = Htemp*snew; 
     else
-        snew = grad(xi_g,xnew) - grad(xi_g, x);
-        ynew = xnew - x;
+        ynew = grad(xi_g,xnew) - g;
+        snew = xnew - x;
     end
     s = [s snew];
     y = [y ynew];
@@ -56,5 +58,7 @@ while nor > tol
     g = grad(xi_g,x); % Random approximation to the gradient at current
                       % iterate 
     nor = norm(g);
-    iter = iter + 1 
+    point = [point x];
+    slope = [slope g];
+    iter = iter + 1;
 end

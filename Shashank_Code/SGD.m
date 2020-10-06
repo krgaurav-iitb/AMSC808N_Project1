@@ -13,16 +13,31 @@ function [iters,gradz] = SGD(init,grad,step,rank,batchsize,m0,schedule)
     NN = schedule;
     x = init; 
     iters = x;
-    k = randi(n,batchsize,1);
+    k = randperm(n,batchsize);
     g = grad(k,x);
     gradz = g;
+    nor = norm(g);
+    tol = 1e-10;
+    iter = 1;
+%     % Constant stepsize routine 
+%     while ((nor > tol) && (iter < 10000))
+%         k = randperm(n,batchsize);
+%         g = grad(k,x);
+%         x = x - step*g;
+%         iters = [iters, x];
+%         gradz = [gradz, g];
+%         nor = norm(g);
+%         iter = iter + 1;
+%     end
+    
+    % Decreasing stepsize routine 
     for ii = 1 : NN
-     s = step/2^ii;
+     s = step/(2^ii);
      nsteps = ceil(N*2^ii/ii);
         for i = 1 : nsteps
-            k = randi(n,batchsize,1);
+            k = randperm(n,batchsize);
             g = grad(k,x);
-            x = x - g*s;
+            x = x - s*g;
             iters = [iters, x];
             gradz = [gradz, g];
         end
