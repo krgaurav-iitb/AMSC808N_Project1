@@ -174,9 +174,5 @@ gnew = gfun(xnew);
 s(:,1) = xnew - x;
 y(:,1) = gnew - g;
 x = xnew;
-%reinitializing all the functions: 
-func = @(s,t)fun0(s,Y,t,lam);
-grad = @(s,t)gfun0(s,Y,t,lam);
-hess = @(s,t)Hven(s,Y,t,lam);
-
+%reinitializing all the functiosn 
 
