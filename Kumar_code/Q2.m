@@ -1,4 +1,4 @@
-function Project1main()
+function Q2()
 close all
 %% read data
 A2012 = readmatrix('A2012.csv');
@@ -19,14 +19,14 @@ ind = find(~isfinite(A(:,2)) |  ~isfinite(A(:,3)) | ~isfinite(A(:,4)) ...
     | ~isfinite(A(:,8)) | ~isfinite(A(:,9)));
 A(ind,:) = [];
 %% select CA, OR, WA, NJ, NY counties
-% ind = find((A(:,1)>=6000 & A(:,1)<=6999)...     %CA
-%    | (A(:,1)>=53000 & A(:,1)<=53999)    ...        %WA
-%    | (A(:,1)>=34000 & A(:,1)<=34999)    ...        %NJ  
-%   | (A(:,1)>=36000 & A(:,1)<=36999) ...        %NY
-%   | (A(:,1)>=41000 & A(:,1)<=41999));          %OR
+ %ind = find((A(:,1)>=6000 & A(:,1)<=6999)); % ...  %CA
+%  | (A(:,1)>=53000 & A(:,1)<=53999) ...        %WA
+%  | (A(:,1)>=34000 & A(:,1)<=34999) ...        %NJ  
+%  | (A(:,1)>=36000 & A(:,1)<=36999) ...        %NY
+%  | (A(:,1)>=41000 & A(:,1)<=41999));          %OR
 % A = A(ind,:);
 
-[n,dim] = size(A);
+[n,dim] = size(A)
 
 %% assign labels: -1 = dem, 1 = GOP
 idem = find(A(:,2) >= A(:,3));
@@ -97,7 +97,7 @@ xlabel(str(i1),'Fontsize',fsz);
 ylabel(str(i2),'Fontsize',fsz);
 zlabel(str(i3),'Fontsize',fsz);
 %% set up optimization problem
-[n,dim] = size(XX);
+[n,dim] = size(XX)
 lam = 0.01;
 Y = (label*ones(1,dim + 1)).*[XX,ones(n,1)];
 w = [-1;-1;1;1];
@@ -106,6 +106,13 @@ gfun = @(I,Y,w)gfun0(I,Y,w,lam);
 Hvec = @(I,Y,w,v)Hvec0(I,Y,w,v,lam);
 
 [w,f,gnorm] = SINewton(fun,gfun,Hvec,Y,w);
+bsz=200;
+ss=1; %constant step size SG indicator if ss=0 else decreasing step size
+N=10;
+NN=15;
+%use SG
+[w,f,gnorm] = SG(bsz,Y,gfun,fun,w,ss,N,NN);
+
 
 fprintf('w = [%d,%d,%d], b = %d\n',w(1),w(2),w(3),w(4));
 
@@ -117,7 +124,7 @@ nn = 50;
     linspace(zmin,zmax,nn));
 plane = w(1)*xx+w(2)*yy+w(3)*zz+w(4);
 p = patch(isosurface(xx,yy,zz,plane,0));
-p.FaceColor = 'red';
+p.FaceColor = 'green';
 p.EdgeColor = 'none';
 camlight 
 lighting gouraud
@@ -145,27 +152,18 @@ ylabel('|| stoch grad f||','Fontsize',fsz);
 
 end
 %%
-% function f = fun0(I,Y,w,lam) %Loss function with tikhonov regularization
-% f = sum(log(1 + exp(-Y(I,:)*w)))/length(I) + 0.5*lam*w'*w; 
-% end
-% %%
-% function g = gfun0(I,Y,w,lam) % Gradient of Loss function 
-% aux = exp(-Y(I,:)*w);
-% d1 = size(Y,2);
-% g = sum(-Y(I,:).*((aux./(1 + aux))*ones(1,d1)),1)'/length(I) + lam*w;
-% end
-% %%
-% function Hv = Hvec0(I,Y,w,v,lam) % Hessian of Loss function
-% aux = exp(-Y(I,:)*w);
-% d1 = size(Y,2);
-% Hv = sum(Y(I,:).*((aux.*(Y(I,:)*v)./((1+aux).^2)).*ones(1,d1)),1)' + lam*v;
-% end
-
-
-
-
-
-
-
-
-
+function f = fun0(I,Y,w,lam)
+f = sum(log(1 + exp(-Y(I,:)*w)))/length(I) + 0.5*lam*w'*w;
+end
+%%
+function g = gfun0(I,Y,w,lam)
+aux = exp(-Y(I,:)*w);
+d1 = size(Y,2);
+g = sum(-Y(I,:).*((aux./(1 + aux))*ones(1,d1)),1)'/length(I) + lam*w;
+end
+%%
+function Hv = Hvec0(I,Y,w,v,lam)
+aux = exp(-Y(I,:)*w);
+d1 = size(Y,2);
+Hv = sum(Y(I,:).*((aux.*(Y(I,:)*v)./((1+aux).^2)).*ones(1,d1)),1)' + lam*v;
+end

@@ -5,8 +5,7 @@ jmax = ceil(log(1e-14)/log(gam)); % max # of iterations in line search
 eta = 0.5;
 CGimax = 20; % max number of CG iterations
 n = size(Y,1);
-%bsz = min(n,64); % batch size
-bsz = 20;
+bsz = min(n,64) % batch size
 kmax = 1e3;
 [n,~] = size(Y);
 I = 1:n;
@@ -29,7 +28,7 @@ for k = 1 : kmax
         wtry = w + a*s;
         f1 = fun(Ig,Y,wtry);
         if f1 < f0 + a*aux
-            fprintf('Linesearch: j = %d, f1 = %d, f0 = %d\n',j,f1,f0);
+            %fprintf('Linesearch: j = %d, f1 = %d, f0 = %d\n',j,f1,f0);
             break;
         else
             a = a*gam;
@@ -41,7 +40,7 @@ for k = 1 : kmax
         nfail = nfail + 1;
     end
     f(k + 1) = fun(I,Y,w);
-    fprintf('k = %d, a = %d, f = %d\n',k,a,f(k+1));
+    %fprintf('k = %d, a = %d, f = %d\n',k,a,f(k+1));
     if nfail > nfailmax
         f(k+2:end) = [];
         normgrad(k+1:end) = [];

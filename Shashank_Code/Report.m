@@ -32,7 +32,7 @@
 % We also set the penalty constant $C$ to be $0.1$. 
 %%
 % Setting up arguments for ASM.m
-c = 0.2; %Constant in the penalty function 
+c = 0.01; %Constant in the penalty function 
 y = label; % the label vector 
 n = length(y); % number of data points
 %D = [(y*y').*((XX * XX')) zeros(n,n); zeros(n,n) zeros(n,n)]; %SPD matrix 
@@ -60,17 +60,21 @@ W = W';
 [lambs, lm] = ASM(init, grad, hess, C, b, W);
 soln = lambs(:,end); % extracting the lambda vector  
 wASM = (XX')*(y .* soln); % optimal w 
-%Computing B via soft margin support vectors
-avg = XX(find(soln == max(soln(find(y==1)))),:) ...
-    + XX(find(soln == max(soln(find(y==-1)))),:);
+% Computing B via soft margin support vectors
+%avg = XX(soln == max(soln(y==1)),:) ...
+%    + XX(soln == max(soln(y==-1)),:);
+avg = XX(abs(soln(y==1)-(c/2)) == min(abs(soln(y==1)-(c/2))),:) ...
+      + XX(abs(soln(y==-1)-(c/2)) == min(abs(soln(y==-1)-(c/2))),:); 
 B = -0.5*(avg * wASM);
 wASM = [wASM; B];
 
-%%% Plotting the classifier 
+%% Plotting the classifier 
 
 % Plotting the data
 idem = find(y==-1);
 igop = find(y==1);
+%svplus = XX(soln == max(soln(y==1)),:);
+%svminus = XX(soln == max(soln(y==-1)),:)
 figure;
 hold on; grid;
 xmin = min(XX(:,1)); xmax = max(XX(:,1));
@@ -109,6 +113,9 @@ camlight
 lighting gouraud
 alpha(0.3);
 %
+%% Subsampled Inexact Newton: Convergence and Runtime statistics
+%
+%
 %% Stochastic Gradient Descent: Convergence and Runtime statistics
 %
 % Recall that in a decreasing stepsize routine, we pick a stepsize sequence
@@ -118,15 +125,16 @@ alpha(0.3);
 % where $m_k = \mathcal{O}(k^{-1}2^{-k})$ so that the convergence property
 % may be retained.
 %
-%% 
-gradient = @(s,t)gfun0(s,Y,t,lam);
-init = wASM;
-step = 0.3;
+%%  
+init = [1;1;1;-1];
+step = 2;
 rank = length(Y(:,1));
-batchsize = 52;
-m0 = 10;
-schedule = 15;
-[avgs, gradz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
+batchsize = 20;
+m0 = 5;
+schedule = 5;
+[avgs, gradz, ngz, steps] = SGD(init,grad,step,rank,...
+                                 true, batchsize, 2,...
+                                 m0,schedule);
 % for i = 2:10
 %     [trials,gz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
 %     avgs = avgs + trials;
@@ -161,17 +169,19 @@ schedule = 15;
 %% 
 % Initializing with a linesearch routine like LBFGS
 
-% n= 
-func = @(x)fun(1:n,Y,x);
 gam = 0.9; % line search step factor
 jmax = ceil(log(1e-14)/log(gam)); % max # of iterations in line search
-eta = 0.5; % backtracking stopping criterion factor
-x = [-1; 1; -1; 1] %initial guess
-g = gradient(1:n, x);
+eta = 0.1; % backtracking stopping criterion factor
+x = [-1; -1; -1; 1]; %initial guess
+g = grad(1:n, x);
 a = ls(x,-g,g,func,eta,gam,jmax);
 xnew = x - a*g;
-gnew = gfun(xnew);
+gnew = grad(1:n,xnew);
 s(:,1) = xnew - x;
-y(:,1) = gnew - g;
+yyy(:,1) = gnew - g;
+rho(1) = 1/((s(:,1)')*yyy(:,1));
 x = xnew;
-
+[points, slopes, norms] = SLBFGS(x, s, yyy, rho, ...
+                           10, 30, 50, 2, func,...
+                           grad, hess, n, n);
+% [xlbfgs, glbfgs, mlbfgs, gnorml] = lbfgs(x, gfun, func, 5);
