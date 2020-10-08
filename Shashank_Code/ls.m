@@ -4,7 +4,7 @@ function [a,j] = ls(x,p,g,func,eta,gam,jmax)
     aux = eta*g'*p;
     for j = 0 : jmax
         xtry = x + a*p;
-        f1 = func(x);
+        f1 = func(xtry);
         if f1 < f0 + a*aux
             break;
         else

@@ -1,4 +1,6 @@
-function [point, slope] = SLBFGS(init, s, y, rho, m, Ng, Nh, M, func, grad, hess, grank, hrank)
+function [point, slope, ngz] = SLBFGS(init, s, y, rho,...
+                                 m, Ng, Nh, M, func,...
+                                 grad, hess, grank, hrank)
 %   init--initial guess
 %   m--limited memory constant (default is 5)
 %   Ng--batch size for gradient
@@ -9,9 +11,10 @@ function [point, slope] = SLBFGS(init, s, y, rho, m, Ng, Nh, M, func, grad, hess
 %   hess--computing hessian 
 %   grank--rank of gradient
 %   hrank--rank of hessian
+%   M--frequency of hessian update
 gam = 0.9; % line search step factor
 jmax = ceil(log(1e-14)/log(gam)); % max # of iterations in line search
-eta = 0.5; % backtracking stopping criterion factor
+eta = 0.1; % backtracking stopping criterion factor
 xi_g = randi(grank, Ng, 1);
 g = grad(xi_g,init);
 tol = 1e-10;
@@ -20,7 +23,10 @@ iter = 1;
 x = init;
 point = x; 
 slope = g; 
-while nor > tol
+ngz = nor;
+Ng = min(Ng,64);
+Nh = min(Nh,64);
+while ((nor > tol) && (iter < 1e4))
     % We compute the direction via the LBFGS routine 
     if iter < m 
         I = 1 : iter;
@@ -28,7 +34,7 @@ while nor > tol
     else
         p = finddirection(g,s,y,rho);
     end
-    % We compute the step size via ls (may be modified)
+    % We compute the step size via ls 
     [a,j] = ls(x,p,g,func,eta,gam,jmax);
     if j == jmax
         p = -g;
@@ -41,24 +47,30 @@ while nor > tol
     %Stochastic step for Hessian 
     if mod(iter,M) == 0
         xi_h = randi(hrank, Nh, 1);
-        Htemp = hess(xi_h, x); %generate random hessian
-        ynew = Htemp*snew; 
+                             %generate random hessian
+        ynew = hess(xi_h, xnew, snew); 
     else
         ynew = grad(xi_g,xnew) - g;
         snew = xnew - x;
+        rhonew = 1/((snew(:,1)')*ynew(:,1));
     end
+    % updating s, y and rho
     s = [s snew];
     y = [y ynew];
+    rho = [rho rhonew];
     if size(s,2) > m
         s = s(:, 2:end);
         y = y(:, 2:end);
+        rho = rho(:,2:end);
     end
-    x = xnew; 
-    xi_g = randi(grank, Ng, 1);
-    g = grad(xi_g,x); % Random approximation to the gradient at current
-                      % iterate 
+    % preparing for next iteration 
+    x = xnew; %x_k+1
+    xi_g = randi(grank, Ng, 1); 
+    g = grad(xi_g,x); % Random approximation to the gradient at the next
+                      % iterate
     nor = norm(g);
     point = [point x];
     slope = [slope g];
+    ngz = [ngz nor];
     iter = iter + 1;
 end
