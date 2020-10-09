@@ -70,7 +70,8 @@ def SLBFGS(fun, gfun, Y, x0, stepmethod = 'linesearch', m = 5, stepsperHupdate =
     f[1] = fun(Iall, Y,x)
     itr = 1
     mitr = 1
-    while nor > tol and itr < maxiter: # End iteration if norm(g) < tol
+    # while nor > tol and itr < maxiter: # End iteration if norm(g) < tol
+    while itr < maxiter:
         if mitr < m: #If we have yet to fill up s, y, and rho to size m
             p = finddirection(g, s[:,:mitr], y[:,:mitr],rho[:mitr])
         else:

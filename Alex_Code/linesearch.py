@@ -20,4 +20,5 @@ def linesearch(x,p,g,fun,eta,gam,jmax):
             break
         else:
             a = a*gam
+    print(j)
     return a, j

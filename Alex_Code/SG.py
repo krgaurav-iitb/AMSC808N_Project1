@@ -1,4 +1,5 @@
 import numpy as np
+from linesearch import linesearch
 import time
 
 def SG(fun, gfun, Y, x, afun, batchsize = 64, itermax = 10000):
@@ -13,6 +14,10 @@ def SG(fun, gfun, Y, x, afun, batchsize = 64, itermax = 10000):
     #  itermax - maximum number of iterations
     
     # Initialize arrays
+    if afun is 'linesearch':
+        gam = 0.9
+        eta = 0.5
+        jmax = round(np.ceil(np.log(1e-14)/np.log(gam)))
     xiter = np.zeros((itermax+1,x.size))
     f = np.zeros(itermax+1)
     runtime = np.zeros(itermax)
@@ -30,7 +35,12 @@ def SG(fun, gfun, Y, x, afun, batchsize = 64, itermax = 10000):
     runtime[0] = toc - tic # Time computation
     itr = 0
     while itr < itermax - 1:
-        xiter[itr+1] = xiter[itr] - afun(itr)*g # Update weights
+        if afun is 'linesearch':
+            linefun = lambda x: fun(I,Y,x)
+            a,j = linesearch(xiter[itr],-g,g,linefun,eta,gam,jmax)
+            xiter[itr + 1] = xiter[itr] - a*g
+        else:
+            xiter[itr+1] = xiter[itr] - afun(itr)*g # Update weights
         f[itr+1] = fun(Iall,Y,xiter[itr+1])
         itr += 1
         I = np.random.permutation(n)[:bsz] # Get a new sample
@@ -38,7 +48,12 @@ def SG(fun, gfun, Y, x, afun, batchsize = 64, itermax = 10000):
         grad_norm[itr] = np.linalg.norm(g)
         toc = time.perf_counter()
         runtime[itr] = toc - tic # Time computation
-    xiter[itr+1] = xiter[itr] - afun(itr)*g # Do final update
+    if afun is 'linesearch':
+        linefun = lambda x: fun(I,Y,x)
+        a,j = linesearch(xiter[itr],-g,g,linefun,eta,gam,jmax)
+        xiter[itr + 1] = xiter[itr] - a*g
+    else:
+        xiter[itr+1] = xiter[itr] - afun(itr)*g # Update weights
     f[itr+1] = fun(Iall,Y,xiter[itr+1])
     return xiter, f, grad_norm, runtime # Return final weights, results vectors, and runtime
     

@@ -29,9 +29,9 @@ def SINewton(fun, gfun, Hvec, Y, w, batchsize = 64,kmax = 1e3):
     runtime = np.zeros(int(kmax))
     tic = time.perf_counter() # Start runtime counter
     nfail = 0
-    # nfailmax = 5*np.ceil(n/bsz)
+    nfailmax = 5*np.ceil(n/bsz)
     # For testing purposes, set a maximum number of iterations, don't allow algorithm to fail
-    nfailmax = kmax+1
+    # nfailmax = kmax+1
     for k in range(int(kmax)):
         # Generate random samples for given batch sizes
         Ig = np.random.permutation(I)[:bsz]
