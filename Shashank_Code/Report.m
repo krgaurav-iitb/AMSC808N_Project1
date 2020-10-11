@@ -32,51 +32,95 @@
 % We also set the penalty constant $C$ to be $0.1$. 
 %%
 % Setting up arguments for ASM.m
-c = 0.01; %Constant in the penalty function 
+c = 100; %Constant in the penalty function 
 y = label; % the label vector 
 n = length(y); % number of data points
 %D = [(y*y').*((XX * XX')) zeros(n,n); zeros(n,n) zeros(n,n)]; %SPD matrix 
 %                                                              in quadratic 
 %                                                              program 
 D = (y*y').*((XX * XX'));
-%d = [ones(n,1); zeros(n,1)]; % linear term in Q.P
-d = ones(n,1);
-%Ap = [eye(n,n) eye(n,n)]; % the matrix A'
-%App = [y' zeros(1,n)]; % the matrix A
-App = y';
-C = [eye(n,n); -eye(n,n); App];  %matrix of contraints
-%b = [zeros(2*n + 1,1); c*ones(n,1)]; % vector of constraints
-b = [zeros(n,1); -c*ones(n,1); 0];
-grad = @(x) D*x - d; %gradient 
-hess = @(x) D; %hessian 
+% d = ones(n,1);
+% Ap = [eye(n,n) eye(n,n)]; % the matrix A'
+% App = y';
+% C = [eye(n,n); -eye(n,n); App];  %matrix of contraints
+% b = [zeros(2*n + 1,1); c*ones(n,1)]; % vector of constraints
+% b = [zeros(n,1); -c*ones(n,1); 0];
+% W = [1:n 2*n + 1];
+% W = W';
+% init = zeros(n,1);
+
+%reducing to n-1 vars
+yn = y(end);
+D00 = D(1:end-1,1:end-1);
+D01 = D(1:end-1,end);
+D10 = D(end,1:end-1);
+D11 = D(end,end);
+%new matrix
+Htil = D00 + y(1:n-1)*D11*y(1:n-1)' - (1/yn)*y(1:n-1)*D10 ...
+       - (1/yn)*D01*y(1:n-1)';
+d = ones(n-1, 1) - (1/yn)*y(1:n-1);
+cons = (-1/yn)*y(1:n-1)';
 %init = [zeros(n,1); c*ones(n,1)]; % initial guess
-init = zeros(n,1);
-%W = [1:n (2*n + 1):(3*n + 1)]; %set of working constraints at the initial point
-W = 1:n;
+init = zeros(n-1,1);
+C = [eye(n-1,n-1); -eye(n-1,n-1); cons; -cons];
+b = [zeros(n-1,1); -c*ones(n-1,1); 0; -c];
+%set of active constraints at the initial point
+W = [1:(n-1) (2*n - 1)];
 W = W';
-% The constraints matrix is a 2n+1 by n matrix 
-% All constraints are active. 
-% Time to run the solver! 
-[lambs, lm] = ASM(init, grad, hess, C, b, W);
-soln = lambs(:,end); % extracting the lambda vector  
+g = @(x)Htil*x - d; %gradient 
+h = @(x)Htil; %hessian 
+
+%% Time to run the solver! 
+[lambs, lm] = ASM(init, g, h, C, b, W);
+%%
+soln = lambs(:,end); % extracting the lambda vector
+lambend = cons*soln;
+soln = [soln; lambend];
 wASM = (XX')*(y .* soln); % optimal w 
 % Computing B via soft margin support vectors
 %avg = XX(soln == max(soln(y==1)),:) ...
-%    + XX(soln == max(soln(y==-1)),:);
+%   + XX(soln == max(soln(y==-1)),:);
 avg = XX(abs(soln(y==1)-(c/2)) == min(abs(soln(y==1)-(c/2))),:) ...
       + XX(abs(soln(y==-1)-(c/2)) == min(abs(soln(y==-1)-(c/2))),:); 
 B = -0.5*(avg * wASM);
 wASM = [wASM; B];
 
 %% Plotting the classifier 
+%load the full data matrix 
+% full = load('allcounties.mat');
+% all = full.XX;
+% alllabels = full.label;
+% 
+% % Plotting the entire dataset 
+% figure;
+% hold on; grid;
+% idem = find(alllabels==-1);
+% igop = find(alllabels==1);
+% %svplus = XX(soln == max(soln(y==1)),:);
+% %svminus = XX(soln == max(soln(y==-1)),:)
+% xmin = min(all(:,1)); xmax = max(all(:,1));
+% ymin = min(all(:,2)); ymax = max(all(:,2));
+% zmin = min(all(:,3)); zmax = max(all(:,3));
+% X1 = (all(:,1)-xmin)/(xmax-xmin);
+% X2 = (all(:,2)-ymin)/(ymax-ymin);
+% X3 = (all(:,3)-zmin)/(zmax-zmin);
+% XX = [X1,X2,X3];
+% plot3(XX(idem,1),XX(idem,2),XX(idem,3),'.','color','b','Markersize',10);
+% plot3(XX(igop,1),XX(igop,2),XX(igop,3),'.','color','r','Markersize',10);
+% view(3)
+% fsz = 16;
+% set(gca,'Fontsize',fsz);
+% xlabel(str(i1),'Fontsize',fsz);
+% ylabel(str(i2),'Fontsize',fsz);
+% zlabel(str(i3),'Fontsize',fsz);
 
 % Plotting the data
+figure; hold on; grid;
 idem = find(y==-1);
 igop = find(y==1);
 %svplus = XX(soln == max(soln(y==1)),:);
 %svminus = XX(soln == max(soln(y==-1)),:)
-figure;
-hold on; grid;
+
 xmin = min(XX(:,1)); xmax = max(XX(:,1));
 ymin = min(XX(:,2)); ymax = max(XX(:,2));
 zmin = min(XX(:,3)); zmax = max(XX(:,3));
@@ -129,12 +173,14 @@ alpha(0.3);
 init = [1;1;1;-1];
 step = 2;
 rank = length(Y(:,1));
-batchsize = 20;
-m0 = 5;
-schedule = 5;
+batchsize = 25;
+m0 = 8;
+schedule = 12;
 [avgs, gradz, ngz, steps] = SGD(init,grad,step,rank,...
                                  true, batchsize, 2,...
-                                 m0,schedule);
+                                 func,m0,schedule);
+
+                            
 % for i = 2:10
 %     [trials,gz] = SGD(init,gradient,step,rank,batchsize,m0,schedule);
 %     avgs = avgs + trials;
@@ -181,7 +227,12 @@ s(:,1) = xnew - x;
 yyy(:,1) = gnew - g;
 rho(1) = 1/((s(:,1)')*yyy(:,1));
 x = xnew;
-[points, slopes, norms] = SLBFGS(x, s, yyy, rho, ...
-                           10, 30, 50, 2, func,...
+[evals, norms, stepsizes] = SLBFGS(x, s, yyy, rho, ...
+                           5, 10, 20, 10, func,...
                            grad, hess, n, n);
-% [xlbfgs, glbfgs, mlbfgs, gnorml] = lbfgs(x, gfun, func, 5);
+%[xlbfgs, glbfgs, mlbfgs, gnorml] = lbfgs(x, gfun, func, 5);
+
+%% Messing with stepsizes 
+
+% # Linesearch vs schedule vs constant 
+

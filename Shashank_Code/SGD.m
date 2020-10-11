@@ -1,6 +1,6 @@
 function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
                                  averaging, batchsize, routine,...
-                                 m0,schedule)
+                                 func, m0,schedule)
     % init--initial guess
     % grad--function that evaluates gradient of f at current iterate
     % step--initial step size set to 0.3
@@ -17,7 +17,7 @@ function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
     N = m0;
     NN = schedule;
     x = init; 
-    iters = x;
+    iters = func(x);
     k = randperm(n,batchsize);
     g = grad(k,x);
     gradz = g;
@@ -38,7 +38,7 @@ function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
                         g = g+gr;
                     end
                 x = x - step*0.001*g;
-                iters = [iters, x];
+                iters = [iters, func(x)];
                 gradz = [gradz, g];
                 steps = [steps step];
                 nor = 0.001*norm(g);
@@ -58,7 +58,7 @@ function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
                         g = g+gr;
                     end
                     x = x - s*0.001*g;
-                    iters = [iters, x];
+                    iters = [iters, func(x)];
                     gradz = [gradz, g];
                     steps = [steps s];
                     ngz = [ngz 0.001*norm(g)];
@@ -75,7 +75,7 @@ function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
                     k = randperm(n,batchsize);
                     g = grad(k,x);                     
                 x = x - step*g;
-                iters = [iters, x];
+                iters = [iters, func(x)];
                 gradz = [gradz, g];
                 steps = [steps step];
                 nor = norm(g);
@@ -91,7 +91,7 @@ function [iters,gradz,ngz,steps] = SGD(init,grad,step,rank,...
                     k = randperm(n,batchsize);
                     g = grad(k,x);
                     x = x - s*g;
-                    iters = [iters, x];
+                    iters = [iters, func(x)];
                     gradz = [gradz, g];
                     ngz = [ngz norm(g)];
                     steps = [steps s];
